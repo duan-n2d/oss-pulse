@@ -1,0 +1,34 @@
+# Tracked repositories. `pypi` is the package whose downloads stand in for adoption;
+# null when the project does not ship a Python package (arrow-js ships to npm).
+repos:
+  - name: apache/spark
+    pypi: pyspark
+  - name: apache/airflow
+    pypi: apache-airflow
+  - name: pola-rs/polars
+    pypi: polars
+  - name: apache/arrow
+    pypi: pyarrow
+  - name: apache/arrow-js
+    pypi: null
+  - name: dbt-labs/dbt-core
+    pypi: dbt-core
+  - name: duckdb/duckdb
+    pypi: duckdb
+  - name: apache/iceberg-python
+    pypi: pyiceberg
+  - name: apache/flink
+    pypi: apache-flink
+  - name: delta-io/delta-rs
+    pypi: deltalake
+  - name: dagster-io/dagster
+    pypi: dagster
+  - name: great-expectations/great_expectations
+    pypi: great-expectations
+  - name: moj-analytical-services/splink
+    pypi: splink
+  - name: huggingface/datasets
+    pypi: datasets
+
+# Pull requests created within this many days are analysed.
+window_days: 365
