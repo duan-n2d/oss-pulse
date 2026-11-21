@@ -1,0 +1,76 @@
+name: daily
+
+# Ingest -> dbt build -> publish landing zone to the `data` branch -> deploy Pages.
+on:
+  schedule:
+    - cron: "30 3 * * *" # 03:30 UTC: yesterday's GH Archive hours are all published
+  workflow_dispatch:
+
+permissions:
+  contents: write # force-push the data branch
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      OSS_PULSE_SALT: ${{ secrets.OSS_PULSE_SALT }}
+      OSS_PULSE_DATA_DIR: ${{ github.workspace }}/data
+      OSS_PULSE_WAREHOUSE: ${{ github.workspace }}/data/warehouse.duckdb
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e .
+
+      - name: Restore the landing zone from the data branch
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git clone -q --depth 1 --branch data \
+              "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+          else
+            echo "::warning::no data branch yet; this run starts from an empty landing zone"
+            mkdir -p data
+          fi
+
+      - name: Ingest (GitHub PRs incremental, GH Archive yesterday, PyPI)
+        run: |
+          oss-pulse ingest-github
+          oss-pulse ingest-gharchive
+          oss-pulse ingest-pypi
+
+      - name: dbt build
+        run: oss-pulse build
+
+      - name: Export site data and dbt docs
+        run: |
+          oss-pulse export-site
+          (cd dbt && dbt docs generate --static --profiles-dir . )
+          mkdir -p site/dbt-docs
+          cp dbt/target/static_index.html site/dbt-docs/index.html
+
+      - name: Publish landing zone and snapshot state
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          PUSH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            bash scripts/publish_data_branch.sh data origin
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

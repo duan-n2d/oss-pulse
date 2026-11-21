@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # A fixed, public salt is fine here: the fixture contains no real people.
+      OSS_PULSE_SALT: ci-fixture-salt-not-secret
+      OSS_PULSE_DATA_DIR: ${{ github.workspace }}/build/fixture
+      OSS_PULSE_WAREHOUSE: ${{ github.workspace }}/build/fixture/warehouse.duckdb
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests scripts
+      - run: ruff format --check src tests scripts
+      - run: pytest -q
+      - name: Build a deterministic fixture through the real landing code
+        run: python scripts/make_fixture.py
+      - name: dbt build (models, snapshot, contracts, data tests, unit tests)
+        run: oss-pulse build --as-of 2026-06-30 --no-freshness
+      - name: Second build exercises the incremental path and snapshot restore
+        run: |
+          rm "$OSS_PULSE_WAREHOUSE"
+          oss-pulse build --as-of 2026-06-30 --no-freshness
+      - name: Export site data from the fixture
+        run: oss-pulse export-site && ls -l site/data
