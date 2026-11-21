@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OSS Pulse</title>
+  <meta name="description" content="How fast do data-ecosystem open-source projects respond to and merge pull requests?">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6.16/dist/plot.umd.min.js"></script>
+</head>
+<body>
+<header class="wrap">
+  <h1>OSS Pulse</h1>
+  <p class="lede">How quickly do data-ecosystem open-source projects answer and merge pull
+    requests, who carries the load, and is adoption growing? Built daily from the GitHub API,
+    GH Archive and PyPI by a dbt + DuckDB pipeline in GitHub Actions.</p>
+  <p class="meta" id="meta">Loading…</p>
+  <nav>
+    <a href="#scorecard">Scorecard</a>
+    <a href="#latency">Response time</a>
+    <a href="#newcomers">Newcomers</a>
+    <a href="#activity">Activity</a>
+    <a href="#adoption">Adoption</a>
+    <a href="#locate">Locate a PR</a>
+    <a href="#health">Data health</a>
+    <a href="dbt-docs/">dbt docs</a>
+    <a href="https://github.com/duan-n2d/oss-pulse">Source</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section id="scorecard">
+    <h2>Scorecard</h2>
+    <p class="note">Human-authored, non-draft PRs opened in the last 365 days. Click a header to sort.
+      <em>Merger bus factor</em>: fewest maintainers who pressed merge on half of all merged PRs.</p>
+    <div class="table-scroll"><table id="scorecard-table"></table></div>
+  </section>
+
+  <section id="latency">
+    <h2>Time to first human response</h2>
+    <p class="note">Bars: median. Tick: 90th percentile. A response is a review or comment by someone
+      other than the author; bots do not count. Log scale.</p>
+    <div id="latency-chart" class="chart"></div>
+    <h3>Distribution</h3>
+    <div id="distribution-chart" class="chart"></div>
+  </section>
+
+  <section id="newcomers">
+    <h2>Newcomers vs maintainers</h2>
+    <p class="note">Median time to first response by the author's association with the repo
+      (as reported by GitHub).</p>
+    <div id="newcomer-chart" class="chart"></div>
+  </section>
+
+  <section id="activity">
+    <h2>Weekly PR activity</h2>
+    <label>Repository <select id="activity-repo"></select></label>
+    <div id="activity-chart" class="chart"></div>
+  </section>
+
+  <section id="adoption">
+    <h2>Adoption: weekly PyPI downloads</h2>
+    <p class="note">Downloads without mirrors (pypistats.org), complete weeks only. Log scale.</p>
+    <div id="downloads-chart" class="chart"></div>
+  </section>
+
+  <section id="locate">
+    <h2>Locate a PR</h2>
+    <p class="note">Paste a PR URL from a tracked repo. Your browser asks the GitHub API for that
+      PR's reviews and comments (unauthenticated, 60 requests per hour), applies the same
+      first-response rule as the pipeline, and places it in the repo's distribution. Nothing is
+      sent anywhere else.</p>
+    <form id="locate-form">
+      <input id="locate-url" type="url" placeholder="https://github.com/pola-rs/polars/pull/30893" required>
+      <button type="submit">Locate</button>
+    </form>
+    <div id="locate-result" class="result" aria-live="polite"></div>
+  </section>
+
+  <section id="health">
+    <h2>Data health</h2>
+    <h3>Freshness</h3>
+    <div class="table-scroll"><table id="freshness-table"></table></div>
+    <h3>GH Archive coverage</h3>
+    <p class="note">Average public events per landed GH Archive hour (sampled weekly at 12:00 UTC,
+      plus full recent days). The collapse is why star, fork and comment counts from GH Archive are
+      treated as a sample here, not as totals.</p>
+    <div id="coverage-chart" class="chart"></div>
+    <h3>Volume anomalies, last 60 days</h3>
+    <p class="note">Observations more than 3 standard deviations from, or below 20% of, their trailing
+      28 observations.</p>
+    <div class="table-scroll"><table id="anomaly-table"></table></div>
+  </section>
+
+  <section id="governance">
+    <h2>Governance</h2>
+    <p>GitHub logins are replaced by salted SHA-256 keys before any data is written, so the public data
+      branch and this page carry no usernames, and keys cannot be reversed by hashing a list of known
+      logins without the secret salt. This page shows aggregates only. Pseudonymised data is still
+      personal data under GDPR and Vietnam's personal data protection rules; see
+      <a href="https://github.com/duan-n2d/oss-pulse/blob/main/docs/governance.md">docs/governance.md</a>.</p>
+  </section>
+</main>
+<footer class="wrap"><p>MIT licensed · data: GitHub API, GH Archive (CC-BY-4.0), pypistats.org</p></footer>
+<script src="app.js"></script>
+</body>
+</html>
