@@ -9,6 +9,7 @@ job without calling any API. Usage:
 
 from __future__ import annotations
 
+import argparse
 import gzip
 import json
 import random
@@ -79,23 +80,23 @@ def pr_node(rng: random.Random, number: int, created: datetime) -> dict:
     }
 
 
-def write_prs(salt: str, rng: random.Random) -> None:
+def write_prs(salt: str, rng: random.Random, repos: list[str], span_days: float, run: str) -> None:
     ingested = datetime(2026, 6, 30, 6, tzinfo=UTC)
-    for repo in REPOS:
+    for repo in repos:
         nodes = []
         for number in range(1, 241):
             created = datetime(2025, 7, 1, tzinfo=UTC) + timedelta(
-                days=rng.uniform(0, 360), hours=rng.uniform(0, 24)
+                days=rng.uniform(0, span_days), hours=rng.uniform(0, 24)
             )
             nodes.append(pr_node(rng, number, created))
         records = [github_prs.pr_record(repo, n, salt, ingested) for n in nodes]
-        path = github_prs.repo_partition_dir(repo) / "run=20260630T060000Z.parquet"
+        path = github_prs.repo_partition_dir(repo) / f"run={run}.parquet"
         write_partition(pa.Table.from_pylist(records, schema=github_prs.PR_SCHEMA), path)
 
 
-def write_repos() -> None:
+def write_repos(repos: list[str], label: str) -> None:
     rows = []
-    for i, repo in enumerate(REPOS):
+    for i, repo in enumerate(repos):
         rows.append(
             {
                 "repo": repo,
@@ -112,7 +113,7 @@ def write_repos() -> None:
         )
     write_partition(
         pa.Table.from_pylist(rows, schema=github_prs.REPO_SCHEMA),
-        RAW_DIR / "github_repos" / "run_date=2026-06-30.parquet",
+        RAW_DIR / "github_repos" / f"run_date={label}.parquet",
     )
 
 
@@ -160,11 +161,27 @@ def write_gharchive(salt: str, rng: random.Random) -> None:
         gharchive.land_hour(day, 12, list(REPOS), salt, source=src.as_posix())
 
 
+LATE_REPO = "acme/late"
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--late-repo",
+        action="store_true",
+        help=f"only add {LATE_REPO}: a backfill whose PRs are all older than the other "
+        "repos' newest update, landed after a first build (incremental regression case)",
+    )
+    args = parser.parse_args()
     salt = get_salt()
+    if args.late_repo:
+        write_prs(salt, random.Random(7), [LATE_REPO], 150, "20260630T070000Z")
+        write_repos([LATE_REPO], "2026-06-30-late")
+        print(f"late repo {LATE_REPO} written to {RAW_DIR}")
+        return
     rng = random.Random(42)
-    write_prs(salt, rng)
-    write_repos()
+    write_prs(salt, rng, list(REPOS), 360, "20260630T060000Z")
+    write_repos(list(REPOS), "2026-06-30")
     write_pypi(rng)
     write_gharchive(salt, rng)
     print(f"fixture written to {RAW_DIR}")

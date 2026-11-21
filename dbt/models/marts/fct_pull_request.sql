@@ -10,10 +10,18 @@
 
 -- Grain: one pull request. Incremental on updated_at: a PR is rebuilt whenever it
 -- changes (merged, reviewed, closed), with a one-day overlap for late landings.
+-- The watermark is per repo. A single global max(updated_at) would skip a repo
+-- whose backfill lands after another repo's newer increment, because the
+-- backfilled PRs all carry older updated_at values.
 with prs as (
-    select * from {{ ref('stg_github__pull_requests') }}
+    select s.*
+    from {{ ref('stg_github__pull_requests') }} as s
     {% if is_incremental() %}
-    where updated_at > (select max(updated_at) - interval 1 day from {{ this }})
+    left join (
+        select repo, max(updated_at) as watermark from {{ this }} group by repo
+    ) as w using (repo)
+    where w.watermark is null
+       or s.updated_at > w.watermark - interval 1 day
     {% endif %}
 ),
 

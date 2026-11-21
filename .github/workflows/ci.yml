@@ -30,7 +30,12 @@ jobs:
         run: python scripts/make_fixture.py
       - name: dbt build (models, snapshot, contracts, data tests, unit tests)
         run: oss-pulse build --as-of 2026-06-30 --no-freshness
-      - name: Second build exercises the incremental path and snapshot restore
+      - name: Incremental build after a late, older-dated repo backfill lands
+        # assert_fct_pull_request_complete fails if the incremental fact skips it
+        run: |
+          python scripts/make_fixture.py --late-repo
+          oss-pulse build --as-of 2026-06-30 --no-freshness
+      - name: Fresh warehouse restores SCD2 snapshot state
         run: |
           rm "$OSS_PULSE_WAREHOUSE"
           oss-pulse build --as-of 2026-06-30 --no-freshness
