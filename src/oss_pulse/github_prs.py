@@ -119,9 +119,7 @@ def _ts(value: str | None) -> datetime | None:
 class GitHubClient:
     def __init__(self, token: str, session: requests.Session | None = None) -> None:
         self.session = session or requests.Session()
-        self.session.headers.update(
-            {"Authorization": f"bearer {token}", "User-Agent": "oss-pulse"}
-        )
+        self.session.headers.update({"Authorization": f"bearer {token}", "User-Agent": "oss-pulse"})
 
     def query(self, query: str, variables: dict, retries: int = 6) -> dict:
         delay = 5.0
@@ -208,7 +206,9 @@ def watermark(repo: str) -> datetime | None:
     if not files:
         return None
     glob = (repo_partition_dir(repo) / "*.parquet").as_posix()
-    row = duckdb.sql(f"select max(updated_at) from read_parquet('{glob}')").fetchone()
+    row = duckdb.execute(
+        f"select max(updated_at) from read_parquet('{glob}', hive_partitioning = false)"
+    ).fetchone()
     return row[0]
 
 

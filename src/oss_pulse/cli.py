@@ -61,7 +61,12 @@ def cmd_ingest_pypi(args: argparse.Namespace) -> int:
 def cmd_build(args: argparse.Namespace) -> int:
     from .warehouse import build
 
-    return build(full_refresh=args.full_refresh, select=args.select)
+    return build(
+        full_refresh=args.full_refresh,
+        select=args.select,
+        as_of=args.as_of,
+        freshness=not args.no_freshness,
+    )
 
 
 def cmd_export(args: argparse.Namespace) -> int:
@@ -106,6 +111,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("build", help="restore state, dbt build, persist snapshot state")
     p.add_argument("--full-refresh", action="store_true")
     p.add_argument("--select")
+    p.add_argument("--as-of", help="pin the analysis date (YYYY-MM-DD), default today UTC")
+    p.add_argument("--no-freshness", action="store_true", help="skip dbt source freshness")
     p.set_defaults(func=cmd_build)
 
     p = sub.add_parser("export-site", help="export mart JSON for the static site")

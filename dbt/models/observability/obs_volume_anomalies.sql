@@ -4,11 +4,13 @@
 --   pypi_downloads     downloads per package per day (pypistats)
 --   gharchive_volume   global GH Archive events per loaded hour, per day observed
 -- An observation is anomalous when it is more than 3 standard deviations from the
--- trailing mean, or below 20% of it (a collapse that a z-score can understate when
--- the history is noisy). Trailing = the previous 28 observations of that series,
+-- trailing mean, or below 20% of it when the trailing mean is at least 5 (a collapse
+-- that a z-score can understate when the history is noisy; sparse series, where a
+-- zero day is normal, are judged on the z-score alone). Trailing = the previous 28 observations of that series,
 -- needing at least 8 of them.
 {% set z_threshold = 3 %}
 {% set collapse_ratio = 0.2 %}
+{% set min_mean_for_collapse = 5 %}
 
 with series as (
     select 'prs_opened' as series, repo as entity, activity_date as obs_date,
@@ -55,7 +57,8 @@ select
     (value / nullif(trailing_mean, 0))::double as ratio_to_trailing,
     (trailing_n >= 8 and (
         abs((value - trailing_mean) / nullif(trailing_std, 0)) > {{ z_threshold }}
-        or value / nullif(trailing_mean, 0) < {{ collapse_ratio }}
+        or (trailing_mean >= {{ min_mean_for_collapse }}
+            and value / nullif(trailing_mean, 0) < {{ collapse_ratio }})
     ))::boolean as is_anomaly,
     (case
         when trailing_n < 8 then null

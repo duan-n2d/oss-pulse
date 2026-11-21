@@ -76,14 +76,22 @@ def run_dbt(*args: str) -> int:
     return subprocess.run(cmd, env=dbt_env(), cwd=DBT_DIR).returncode
 
 
-def build(full_refresh: bool = False, select: str | None = None) -> int:
+def build(
+    full_refresh: bool = False,
+    select: str | None = None,
+    as_of: str | None = None,
+    freshness: bool = True,
+) -> int:
     restored = restore_state()
     if restored:
         log.info("restored snapshot state: %s", ", ".join(restored))
     # Freshness is reported, not enforced: a stale source should show up on the
     # dashboard rather than stop the rest of the pipeline.
-    run_dbt("source", "freshness")
+    if freshness:
+        run_dbt("source", "freshness")
     args = ["build"]
+    if as_of:
+        args += ["--vars", f"as_of: {as_of}"]
     if full_refresh:
         args.append("--full-refresh")
     if select:

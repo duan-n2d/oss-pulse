@@ -180,3 +180,10 @@ models:
       - {name: bucket_order, data_type: integer}
       - {name: prs, data_type: bigint}
       - {name: share, data_type: double}
+
+  - name: mart_response_quantiles
+    columns:
+      - {name: repo, data_type: varchar, data_tests: [unique, not_null]}
+      - {name: prs, data_type: bigint}
+      - {name: share_unanswered, data_type: double}
+      - {name: quantiles, data_type: "double[]", description: "Hours to first response at q = 0.00, 0.01, ... 1.00 (answered PRs)."}

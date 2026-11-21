@@ -13,3 +13,4 @@ site/data/
 site/dbt-docs/
 _site/
 *.parquet.tmp
+build/

@@ -40,13 +40,13 @@ def fetch_package(package: str, session: requests.Session, retries: int = 5) -> 
             delay *= 2
             continue
         resp.raise_for_status()
-        return [
-            row for row in resp.json()["data"] if row["category"] == "without_mirrors"
-        ]
+        return [row for row in resp.json()["data"] if row["category"] == "without_mirrors"]
     raise RuntimeError(f"pypistats rate-limited {package} {retries} times")
 
 
-def land_downloads(repos: list[Repo], run_date: date, session: requests.Session | None = None) -> int:
+def land_downloads(
+    repos: list[Repo], run_date: date, session: requests.Session | None = None
+) -> int:
     session = session or requests.Session()
     session.headers.setdefault("User-Agent", "oss-pulse (+https://github.com/duan-n2d/oss-pulse)")
     now = datetime.now(UTC).replace(microsecond=0)

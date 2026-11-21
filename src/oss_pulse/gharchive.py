@@ -54,18 +54,18 @@ def land_hour(day: date, hour: int, repos: list[str], salt: str, source: str | N
     src = source or hour_url(day, hour)
     con = _connect()
     con.execute(
-        f"""
+        """
         create temp table hour_events as
         select id, type, actor.login as login, repo.name as repo, created_at,
                payload ->> 'action' as action
         from read_json(?, format='newline_delimited', compression='gzip',
-             columns={{'id': 'VARCHAR', 'type': 'VARCHAR', 'actor': 'STRUCT(login VARCHAR)',
+             columns={'id': 'VARCHAR', 'type': 'VARCHAR', 'actor': 'STRUCT(login VARCHAR)',
                        'repo': 'STRUCT(name VARCHAR)', 'created_at': 'TIMESTAMPTZ',
-                       'payload': 'JSON'}})
+                       'payload': 'JSON'})
         """,
         [src],
     )
-    volume = con.execute(
+    volume = con.sql(
         """
         select count(*) as total_events,
                count(*) filter (where type = 'PushEvent') as push_events,
@@ -78,7 +78,7 @@ def land_hour(day: date, hour: int, repos: list[str], salt: str, source: str | N
     ).append_column("ingested_at", pa.array([datetime.now(UTC).replace(microsecond=0)]))
 
     bots = sorted(KNOWN_BOTS)
-    events = con.execute(
+    events = con.sql(
         f"""
         select id as event_id, type as event_type, action, repo, created_at,
                substr(sha256(? || ':' || lower(login)), 1, 16) as actor_key,
@@ -88,7 +88,7 @@ def land_hour(day: date, hour: int, repos: list[str], salt: str, source: str | N
         where repo in (select unnest(?::varchar[]))
           and type in {KEPT_TYPES}
         """,
-        [salt, bots, repos],
+        params=[salt, bots, repos],
     ).to_arrow_table()
 
     part = f"date={day.isoformat()}/hour={hour:02d}.parquet"
