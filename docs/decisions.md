@@ -66,9 +66,32 @@ restored into the fresh warehouse before the next.
   runs (CI runs both).
 * Contracts are enforced on every mart; a contract change fails the build instead of
   silently changing a column type the dashboard reads.
-* `contributor_type` uses GitHub's `authorAssociation`, which the API reports at ingest
-  time, not at PR creation. A first-time contributor who has since landed a PR shows
-  as `CONTRIBUTOR` on later runs. This is a known approximation.
+* **Newcomer status is derived from the data, not from `authorAssociation`.** The
+  first version used the association, and the first real build showed newcomers
+  merging 9% of the time against 92% for maintainers. The cause was survivorship
+  bias, not reality: GitHub evaluates the association at query time, so a newcomer
+  whose PR was merged now reads as `CONTRIBUTOR`, leaving only the unmerged PRs
+  labelled as newcomers. Now `maintainer` still comes from the association
+  (OWNER/MEMBER/COLLABORATOR), and `newcomer` means the author's first PR in that
+  repo within the landed data (`author_pr_seq = 1`). With that definition, newcomer
+  PRs merge 58% of the time (median across repos). The remaining bias is that
+  someone who contributed before the landed window and then paused looks new.
+* **Bots typed as users.** `flinkbot` (CI report on every Flink PR within minutes)
+  and `HuggingFaceDocBuilderDev` were counted as human responders and made Flink
+  look like it answered in 6 minutes. Bot detection now also uses a maintained list,
+  `privacy.KNOWN_BOTS`. Its hashed keys are rewritten to `raw/bot_keys` on every
+  ingest and ORed into every `is_bot` flag in staging, so adding a bot reclassifies
+  data landed earlier without re-ingesting. The list was checked by looking for
+  first responders with very high counts and minute-level median latency.
+* **Merges outside GitHub.** Apache Spark merges with a committer script that pushes
+  the commit and closes the PR, so GitHub records about 0.01% of Spark's resolved PRs
+  as merged. `int_repo_merge_tracking` marks a repo as not tracking merges when fewer
+  than 5% of at least 50 resolved PRs are merged. Merge rate, time to merge and bus
+  factors are then null instead of a misleading 0%.
+* **Source timestamp anomalies are flagged, not failed.** GitHub reports at least one
+  Airflow backport as merged 53 minutes before it was opened (the commit was already
+  on the base branch). `has_source_timestamp_anomaly` keeps the source values, the
+  duration is null, and a warn-level test lists such rows.
 * Star and fork counts change daily, so they are facts (latest value on `dim_repo`),
   not SCD2 attributes; the snapshot tracks description, archive status, licence,
   language and default branch.

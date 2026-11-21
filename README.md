@@ -157,9 +157,14 @@ fields and publishes no person-level views. Details, controls and erasure:
 * **First response** counts submitted reviews and top-level comments, the first ten of
   each. A maintainer who only leaves inline review comments without submitting a
   review is missed.
-* **`contributor_type`** comes from GitHub's `authorAssociation` as reported at ingest
-  time, not at PR creation, so some early PRs of now-regular contributors are labelled
-  `returning_contributor` rather than `newcomer`.
+* **Newcomer** means the author's first PR in that repo within the landed data, so
+  someone who contributed before that period and then paused looks new. The obvious
+  alternative, GitHub's `authorAssociation`, is evaluated at query time and produced a
+  survivorship bias (see [decisions](docs/decisions.md#modelling)).
+* **Merge metrics are null for Apache Spark**, which merges outside GitHub's merge
+  button; GitHub records its accepted PRs as closed.
+* **Bots typed as users** are excluded through a maintained list; an unlisted bot
+  would make a repo look faster than it is.
 * **GH Archive** stars, forks and comments are a partial sample since its 2026 volume
   drop, and before the daily job has run for a while only weekly sample hours exist.
 * **The window is 365 days of PR creation**; bus factors and return rates say nothing
