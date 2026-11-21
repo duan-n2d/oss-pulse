@@ -6,6 +6,7 @@ select distinct on (event_id)
     created_at,
     created_at::date as event_date,
     actor_key,
-    coalesce(actor_is_bot, false) as actor_is_bot
+    coalesce(actor_is_bot, false)
+        or coalesce(actor_key in (select bot_key from {{ ref('stg_bot_keys') }}), false) as actor_is_bot
 from {{ source('raw', 'gharchive_events') }}
 order by event_id

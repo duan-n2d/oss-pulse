@@ -21,7 +21,7 @@ import pyarrow as pa
 
 from oss_pulse import gharchive, github_prs
 from oss_pulse.config import RAW_DIR
-from oss_pulse.landing import write_partition
+from oss_pulse.landing import write_bot_keys, write_partition
 from oss_pulse.privacy import get_salt
 from oss_pulse.pypi import SCHEMA as PYPI_SCHEMA
 
@@ -184,6 +184,7 @@ def main() -> None:
     write_repos(list(REPOS), "2026-06-30")
     write_pypi(rng)
     write_gharchive(salt, rng)
+    write_bot_keys(RAW_DIR, salt)
     print(f"fixture written to {RAW_DIR}")
 
 

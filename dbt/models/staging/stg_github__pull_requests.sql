@@ -25,9 +25,11 @@ select
     deletions,
     changed_files,
     author.key as author_key,
-    coalesce(author.is_bot, false) as author_is_bot,
+    coalesce(author.is_bot, false)
+        or coalesce(author.key in (select bot_key from {{ ref('stg_bot_keys') }}), false) as author_is_bot,
     merged_by.key as merged_by_key,
-    coalesce(merged_by.is_bot, false) as merged_by_is_bot,
+    coalesce(merged_by.is_bot, false)
+        or coalesce(merged_by.key in (select bot_key from {{ ref('stg_bot_keys') }}), false) as merged_by_is_bot,
     reviews,
     comments,
     ingested_at

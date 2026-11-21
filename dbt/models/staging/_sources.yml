@@ -31,6 +31,11 @@ sources:
           freshness:
             warn_after: {count: 2, period: day}
             error_after: {count: 7, period: day}
+      - name: bot_keys
+        description: >
+          Pseudonymised keys of accounts that act as bots but are typed as users
+          (privacy.KNOWN_BOTS). Rewritten on every ingest, so extending the list
+          reclassifies data landed earlier.
       - name: gharchive_volume
         description: Global event volume of each landed GH Archive hour (coverage signal).
       - name: pypi_downloads

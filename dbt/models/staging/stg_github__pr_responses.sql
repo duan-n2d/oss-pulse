@@ -12,11 +12,23 @@ reviews as (
 comments as (
     select pr_id, 'comment' as response_type, unnest(comments, recursive := true)
     from prs
+),
+
+responses as (
+    select pr_id, response_type, "at" as responded_at, key as actor_key, is_bot,
+           state as review_state
+    from reviews
+    union all
+    select pr_id, response_type, "at", key, is_bot, state
+    from comments
 )
 
-select pr_id, response_type, "at" as responded_at, key as actor_key,
-       coalesce(is_bot, false) as actor_is_bot, state as review_state
-from reviews
-union all
-select pr_id, response_type, "at", key, coalesce(is_bot, false), state
-from comments
+select
+    pr_id,
+    response_type,
+    responded_at,
+    actor_key,
+    coalesce(is_bot, false)
+        or coalesce(actor_key in (select bot_key from {{ ref('stg_bot_keys') }}), false) as actor_is_bot,
+    review_state
+from responses

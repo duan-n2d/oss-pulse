@@ -10,7 +10,8 @@ from datetime import UTC, date, datetime, timedelta
 import duckdb
 
 from . import gharchive, github_prs, pypi
-from .config import load_config
+from .config import RAW_DIR, load_config
+from .landing import write_bot_keys
 from .privacy import get_salt
 
 log = logging.getLogger("oss_pulse")
@@ -25,6 +26,7 @@ def cmd_ingest_github(args: argparse.Namespace) -> int:
     for repo in repos:
         total += github_prs.land_prs(repo, cfg.window_days, salt, client)
     github_prs.land_repo_metadata(cfg.repos, client, datetime.now(UTC).date())
+    write_bot_keys(RAW_DIR, salt)
     log.info("github: %d PR versions landed", total)
     return 0
 
@@ -39,6 +41,7 @@ def cmd_ingest_gharchive(args: argparse.Namespace) -> int:
     cfg = load_config()
     salt = get_salt()
     names = [r.name for r in cfg.repos]
+    write_bot_keys(RAW_DIR, salt)
     hours = [int(h) for h in args.hours.split(",")] if args.hours else list(range(24))
     missing = 0
     for day in _days(args):

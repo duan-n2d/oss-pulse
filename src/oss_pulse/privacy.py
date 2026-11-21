@@ -45,19 +45,42 @@ def is_bot(login: str | None, typename: str | None) -> bool:
     return low.endswith("[bot]") or low.endswith("-bot") or low in KNOWN_BOTS
 
 
-# Accounts that act as bots but are typed as User by the API.
+# Accounts that act as bots but are typed as User by the API. Adding a login here
+# takes effect retroactively: ingest writes the hashed keys to raw/bot_keys and
+# staging ORs them into every is_bot flag (see write_bot_keys).
 KNOWN_BOTS = frozenset(
     {
+        "amplabjenkins",
         "asfgit",
-        "codecov-commenter",
-        "github-actions",
-        "dependabot",
-        "renovate",
-        "pre-commit-ci",
-        "sonarcloud",
-        "netlify",
-        "vercel",
         "boring-cyborg",
+        "changeset-bot",
+        "cla-bot",
+        "claassistant",
+        "codecov-commenter",
+        "coderabbitai",
+        "codspeed-hq",
+        "copilot",
+        "dependabot",
+        "dosubot",
+        "flinkbot",  # Apache Flink CI report, comments within minutes on every PR
+        "gemini-code-assist",
+        "github-actions",
+        "github-advanced-security",
+        "hf-doc-builder",
+        "huggingfacedocbuilderdev",  # Hugging Face docs preview bot
+        "mergify",
+        "netlify",
         "polars-bot",
+        "pre-commit-ci",
+        "renovate",
+        "sonarcloud",
+        "sonarqubecloud",
+        "sparkqa",
+        "vercel",
     }
 )
+
+
+def bot_keys(salt: str) -> list[dict]:
+    """Pseudonymised keys of KNOWN_BOTS (bot names are not personal data)."""
+    return [{"bot_login": b, "bot_key": pseudonymize(b, salt)} for b in sorted(KNOWN_BOTS)]
