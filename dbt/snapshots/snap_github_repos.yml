@@ -1,0 +1,13 @@
+snapshots:
+  - name: snap_github_repos
+    description: >
+      SCD2 history of slowly changing repository attributes. Star and fork counts
+      change daily and are deliberately not tracked here (they are facts, not
+      attributes). Persisted between CI runs as data/state/snap_github_repos.parquet.
+    relation: ref('stg_github__repos_latest')
+    config:
+      schema: snapshots
+      unique_key: repo
+      strategy: check
+      check_cols: [description, is_archived, license, primary_language, default_branch]
+      hard_deletes: invalidate

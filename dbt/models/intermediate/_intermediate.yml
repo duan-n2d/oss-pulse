@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: int_pr_first_response
+    description: First non-author, non-bot review or comment per PR.
+    columns:
+      - name: pr_id
+        data_tests: [unique, not_null]
+
+unit_tests:
+  - name: first_response_ignores_bots_author_and_earlier_events
+    description: >
+      A bot comment, the author's own comment and an event timestamped before the PR
+      was opened are not responses; the first maintainer review is.
+    model: int_pr_first_response
+    given:
+      - input: ref('stg_github__pull_requests')
+        rows:
+          - {pr_id: "a/b#1", author_key: "aaaaaaaaaaaaaaaa", created_at: "2026-01-01 00:00:00+00"}
+          - {pr_id: "a/b#2", author_key: "aaaaaaaaaaaaaaaa", created_at: "2026-01-01 00:00:00+00"}
+      - input: ref('stg_github__pr_responses')
+        rows:
+          - {pr_id: "a/b#1", response_type: comment, responded_at: "2025-12-31 23:00:00+00", actor_key: "cccccccccccccccc", actor_is_bot: false}
+          - {pr_id: "a/b#1", response_type: comment, responded_at: "2026-01-01 00:05:00+00", actor_key: "bbbbbbbbbbbbbbbb", actor_is_bot: true}
+          - {pr_id: "a/b#1", response_type: comment, responded_at: "2026-01-01 01:00:00+00", actor_key: "aaaaaaaaaaaaaaaa", actor_is_bot: false}
+          - {pr_id: "a/b#1", response_type: review, responded_at: "2026-01-01 05:00:00+00", actor_key: "dddddddddddddddd", actor_is_bot: false}
+          - {pr_id: "a/b#1", response_type: comment, responded_at: "2026-01-01 07:00:00+00", actor_key: "eeeeeeeeeeeeeeee", actor_is_bot: false}
+    expect:
+      rows:
+        - {pr_id: "a/b#1", first_response_at: "2026-01-01 05:00:00+00", first_review_at: "2026-01-01 05:00:00+00", first_responder_key: "dddddddddddddddd", distinct_responders: 2}
+        - {pr_id: "a/b#2", first_response_at: null, first_review_at: null, first_responder_key: null, distinct_responders: 0}

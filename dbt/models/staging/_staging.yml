@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: stg_github__pull_requests
+    description: Latest version of each landed pull request.
+    columns:
+      - name: pr_id
+        description: "`owner/name#number`, unique across repos."
+        data_tests: [unique, not_null]
+      - name: author_key
+        description: Pseudonymised author login (null for deleted accounts).
+  - name: stg_github__pr_responses
+    description: Reviews and top-level comments on PRs.
+    columns:
+      - name: response_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [review, comment]
+  - name: stg_github__repos
+    description: Repository metadata, one row per observation.
+  - name: stg_github__repos_latest
+    description: Latest metadata per repo.
+    columns:
+      - name: repo
+        data_tests: [unique, not_null]
+  - name: stg_gharchive__events
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+  - name: stg_gharchive__hour_volume
+    columns:
+      - name: hour_start
+        data_tests: [unique, not_null]
+  - name: stg_pypi__downloads
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            columns: [package, download_date]

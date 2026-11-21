@@ -1,0 +1,42 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Landing zone written by `oss-pulse ingest-*`. Every GitHub login is already
+      pseudonymised (salted SHA-256, 16 hex chars) before it is written here.
+    meta:
+      external_location: >-
+        read_parquet('{{ env_var("OSS_PULSE_DATA_DIR", "../data") }}/raw/{name}/**/*.parquet',
+        hive_partitioning = false, union_by_name = true)
+    tables:
+      - name: github_prs
+        description: One row per PR version per ingest run (GitHub GraphQL API).
+        loaded_at_field: ingested_at
+        config:
+          freshness:
+            warn_after: {count: 2, period: day}
+            error_after: {count: 7, period: day}
+      - name: github_repos
+        description: Repository metadata observed once per ingest run.
+        loaded_at_field: observed_at
+        config:
+          freshness:
+            warn_after: {count: 2, period: day}
+            error_after: {count: 7, period: day}
+      - name: gharchive_events
+        description: GH Archive events of the tracked repos, one file per UTC hour.
+        loaded_at_field: created_at
+        config:
+          freshness:
+            warn_after: {count: 2, period: day}
+            error_after: {count: 7, period: day}
+      - name: gharchive_volume
+        description: Global event volume of each landed GH Archive hour (coverage signal).
+      - name: pypi_downloads
+        description: Daily downloads without mirrors (pypistats.org), rolling ~180 days.
+        loaded_at_field: ingested_at
+        config:
+          freshness:
+            warn_after: {count: 2, period: day}
+            error_after: {count: 7, period: day}

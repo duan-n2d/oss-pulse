@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: obs_source_freshness
+    description: Lag of each landed source against now, with warn/error thresholds.
+    columns:
+      - name: source_name
+        data_tests: [unique, not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments: {values: [pass, warn, error]}
+  - name: obs_volume_anomalies
+    description: Each observation of each monitored series against its trailing 28 observations.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments: {columns: [series, entity, obs_date]}
+  - name: obs_gharchive_coverage
+    description: GH Archive hours loaded and events per hour relative to the pre-2026 median hour.
+    columns:
+      - name: volume_date
+        data_tests: [unique, not_null]

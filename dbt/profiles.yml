@@ -1,0 +1,9 @@
+oss_pulse:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('OSS_PULSE_WAREHOUSE', '../data/warehouse.duckdb') }}"
+      threads: 4
+      settings:
+        timezone: UTC

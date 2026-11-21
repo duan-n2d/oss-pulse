@@ -1,0 +1,182 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: Calendar for twice the analysis window (for trailing comparisons).
+    columns:
+      - {name: date_day, data_type: date, constraints: [{type: not_null}], data_tests: [unique]}
+      - {name: year, data_type: integer}
+      - {name: quarter, data_type: integer}
+      - {name: month, data_type: integer}
+      - {name: year_month, data_type: varchar}
+      - {name: week_start, data_type: date}
+      - {name: iso_day_of_week, data_type: integer}
+      - {name: is_weekend, data_type: boolean}
+
+  - name: dim_repo
+    description: Tracked repositories, current attributes (from the SCD2 snapshot) and latest counts.
+    columns:
+      - {name: repo, data_type: varchar, constraints: [{type: not_null}], data_tests: [unique]}
+      - {name: owner, data_type: varchar}
+      - {name: description, data_type: varchar}
+      - {name: primary_language, data_type: varchar}
+      - {name: license, data_type: varchar}
+      - {name: default_branch, data_type: varchar}
+      - {name: is_archived, data_type: boolean}
+      - {name: repo_created_at, data_type: timestamp with time zone}
+      - {name: pypi_package, data_type: varchar, description: "Null when the project has no Python package (arrow-js)."}
+      - {name: stars, data_type: bigint}
+      - {name: forks, data_type: bigint}
+      - {name: counts_observed_at, data_type: timestamp with time zone}
+      - {name: attributes_valid_from, data_type: timestamp with time zone}
+
+  - name: dim_contributor
+    description: >
+      One pseudonymised person seen as PR author, responder or merger. There is no
+      login column by design: keys are salted hashes created before landing.
+    columns:
+      - name: contributor_key
+        data_type: varchar
+        constraints: [{type: not_null}]
+        data_tests: [unique, is_pseudonymised_key]
+      - {name: is_bot, data_type: boolean}
+      - {name: first_seen_at, data_type: timestamp with time zone}
+      - {name: last_seen_at, data_type: timestamp with time zone}
+      - {name: repos_active_in, data_type: bigint}
+      - {name: prs_authored, data_type: bigint}
+      - {name: prs_merged, data_type: bigint}
+      - {name: responses_given, data_type: bigint}
+      - {name: prs_merged_as_maintainer, data_type: bigint}
+
+  - name: fct_pull_request
+    description: >
+      Grain: one pull request. Includes PRs created before the window that were
+      updated inside it; marts filter on created_at.
+    columns:
+      - {name: pr_id, data_type: varchar, constraints: [{type: not_null}], data_tests: [unique]}
+      - name: repo
+        data_type: varchar
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_repo'), field: repo}
+      - {name: pr_number, data_type: bigint}
+      - name: author_key
+        data_type: varchar
+        data_tests:
+          - is_pseudonymised_key
+          - relationships:
+              arguments: {to: ref('dim_contributor'), field: contributor_key}
+      - {name: author_is_bot, data_type: boolean}
+      - {name: author_association, data_type: varchar, description: "As reported by the API at ingest time."}
+      - name: contributor_type
+        data_type: varchar
+        data_tests:
+          - accepted_values:
+              arguments: {values: [maintainer, returning_contributor, newcomer]}
+      - {name: created_at, data_type: timestamp with time zone, constraints: [{type: not_null}]}
+      - name: created_date
+        data_type: date
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_date'), field: date_day}
+              config: {where: "created_date >= current_date - interval 700 days"}
+      - {name: updated_at, data_type: timestamp with time zone}
+      - {name: merged_at, data_type: timestamp with time zone}
+      - {name: closed_at, data_type: timestamp with time zone}
+      - name: status
+        data_type: varchar
+        data_tests:
+          - accepted_values:
+              arguments: {values: [merged, closed, open]}
+      - {name: is_draft, data_type: boolean}
+      - {name: merged_by_key, data_type: varchar, data_tests: [is_pseudonymised_key]}
+      - {name: additions, data_type: bigint}
+      - {name: deletions, data_type: bigint}
+      - {name: changed_files, data_type: bigint}
+      - name: size_bucket
+        data_type: varchar
+        data_tests:
+          - accepted_values:
+              arguments: {values: [XS, S, M, L, XL]}
+      - {name: first_response_at, data_type: timestamp with time zone}
+      - {name: first_review_at, data_type: timestamp with time zone}
+      - {name: first_responder_key, data_type: varchar, data_tests: [is_pseudonymised_key]}
+      - {name: distinct_responders, data_type: bigint}
+      - {name: hours_to_first_response, data_type: double}
+      - {name: hours_to_first_review, data_type: double}
+      - {name: hours_to_merge, data_type: double}
+
+  - name: fct_repo_activity_daily
+    description: Grain repo x day. GH Archive columns are null on days with no hours loaded.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments: {columns: [repo, activity_date]}
+    columns:
+      - {name: repo, data_type: varchar, constraints: [{type: not_null}]}
+      - {name: activity_date, data_type: date, constraints: [{type: not_null}]}
+      - {name: prs_opened, data_type: bigint}
+      - {name: prs_merged, data_type: bigint}
+      - {name: prs_closed_unmerged, data_type: bigint}
+      - {name: prs_first_responded, data_type: bigint}
+      - {name: gharchive_stars, data_type: bigint}
+      - {name: gharchive_forks, data_type: bigint}
+      - {name: gharchive_issue_comments, data_type: bigint}
+      - name: gharchive_hours_loaded
+        data_type: bigint
+        data_tests:
+          - accepted_range:
+              arguments: {min_value: 0, max_value: 24}
+      - {name: gharchive_global_events, data_type: bigint}
+
+  - name: fct_package_downloads_daily
+    description: Grain package x day, PyPI downloads without mirrors.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments: {columns: [package, download_date]}
+    columns:
+      - {name: package, data_type: varchar, constraints: [{type: not_null}]}
+      - {name: repo, data_type: varchar}
+      - {name: download_date, data_type: date, constraints: [{type: not_null}]}
+      - {name: downloads, data_type: bigint}
+      - {name: downloads_7d_avg, data_type: double}
+
+  - name: mart_repo_scorecard
+    description: Window-level KPIs per repo (human-authored, non-draft PRs).
+    columns:
+      - {name: repo, data_type: varchar, data_tests: [unique, not_null]}
+      - {name: pypi_package, data_type: varchar}
+      - {name: stars, data_type: bigint}
+      - {name: prs_opened, data_type: bigint}
+      - {name: prs_merged, data_type: bigint}
+      - {name: prs_closed_unmerged, data_type: bigint}
+      - {name: prs_still_open, data_type: bigint}
+      - {name: merge_rate, data_type: double, description: "merged / (merged + closed unmerged)"}
+      - {name: distinct_authors, data_type: bigint}
+      - {name: median_hours_to_first_response, data_type: double}
+      - {name: p90_hours_to_first_response, data_type: double}
+      - {name: share_responded_within_24h, data_type: double}
+      - {name: share_unanswered_7d, data_type: double, description: "Among PRs at least 7 days old: no human response within 7 days."}
+      - {name: median_hours_to_merge, data_type: double}
+      - {name: author_bus_factor, data_type: bigint, description: "Fewest authors behind >= 50% of merged PRs."}
+      - {name: merger_bus_factor, data_type: bigint, description: "Fewest maintainers who pressed merge on >= 50% of merged PRs."}
+      - {name: newcomers_eligible, data_type: bigint}
+      - {name: newcomer_return_rate_90d, data_type: double}
+      - {name: downloads_last_30d, data_type: bigint}
+      - {name: downloads_growth_30d, data_type: double}
+
+  - name: mart_latency_by_contributor_type
+    columns:
+      - {name: repo, data_type: varchar}
+      - {name: contributor_type, data_type: varchar}
+      - {name: prs_opened, data_type: bigint}
+      - {name: median_hours_to_first_response, data_type: double}
+      - {name: median_hours_to_merge, data_type: double}
+      - {name: merge_rate, data_type: double}
+
+  - name: mart_response_time_distribution
+    columns:
+      - {name: repo, data_type: varchar}
+      - {name: bucket, data_type: varchar}
+      - {name: bucket_order, data_type: integer}
+      - {name: prs, data_type: bigint}
+      - {name: share, data_type: double}
