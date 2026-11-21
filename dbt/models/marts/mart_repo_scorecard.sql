@@ -126,15 +126,21 @@ select
     coalesce(f.prs_merged, 0)::bigint as prs_merged,
     coalesce(f.prs_closed_unmerged, 0)::bigint as prs_closed_unmerged,
     coalesce(f.prs_still_open, 0)::bigint as prs_still_open,
-    (f.prs_merged / nullif(f.prs_merged + f.prs_closed_unmerged, 0))::double as merge_rate,
+    coalesce(mt.merges_tracked_on_github, true)::boolean as merges_tracked_on_github,
+    (case when mt.merges_tracked_on_github is not false
+        then f.prs_merged / nullif(f.prs_merged + f.prs_closed_unmerged, 0)
+    end)::double as merge_rate,
     f.distinct_authors::bigint as distinct_authors,
     f.median_hours_to_first_response::double as median_hours_to_first_response,
     f.p90_hours_to_first_response::double as p90_hours_to_first_response,
     f.share_responded_within_24h::double as share_responded_within_24h,
     u.share_unanswered_7d::double as share_unanswered_7d,
-    f.median_hours_to_merge::double as median_hours_to_merge,
-    af.factor::bigint as author_bus_factor,
-    mf.factor::bigint as merger_bus_factor,
+    (case when mt.merges_tracked_on_github is not false then f.median_hours_to_merge end)::double
+        as median_hours_to_merge,
+    (case when mt.merges_tracked_on_github is not false then af.factor end)::bigint
+        as author_bus_factor,
+    (case when mt.merges_tracked_on_github is not false then mf.factor end)::bigint
+        as merger_bus_factor,
     nr.newcomers_eligible::bigint as newcomers_eligible,
     (nr.newcomers_returned / nullif(nr.newcomers_eligible, 0))::double
         as newcomer_return_rate_90d,
@@ -142,6 +148,7 @@ select
     (d.downloads_last_30d / nullif(d.downloads_prev_30d, 0) - 1)::double
         as downloads_growth_30d
 from {{ ref('dim_repo') }} as r
+left join {{ ref('int_repo_merge_tracking') }} as mt using (repo)
 left join flow as f using (repo)
 left join unanswered as u using (repo)
 left join author_factor as af using (repo)

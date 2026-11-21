@@ -27,6 +27,21 @@ with prs as (
 
 responses as (
     select * from {{ ref('int_pr_first_response') }}
+),
+
+-- Position of each PR among its author's PRs in the repo, over all landed data
+-- (not just this increment). Newcomer status is derived from this sequence, not
+-- from authorAssociation: GitHub evaluates the association at query time, so a
+-- newcomer whose PR has since been merged reads as CONTRIBUTOR, which would leave
+-- only unmerged PRs labelled as newcomers (survivorship bias).
+author_sequence as (
+    select
+        pr_id,
+        row_number() over (
+            partition by repo, author_key order by created_at, pr_number
+        ) as author_pr_seq
+    from {{ ref('stg_github__pull_requests') }}
+    where author_key is not null
 )
 
 select
@@ -36,10 +51,12 @@ select
     p.author_key::varchar as author_key,
     p.author_is_bot::boolean as author_is_bot,
     p.author_association::varchar as author_association,
+    a.author_pr_seq::bigint as author_pr_seq,
     (case
         when p.author_association in ('OWNER', 'MEMBER', 'COLLABORATOR') then 'maintainer'
-        when p.author_association = 'CONTRIBUTOR' then 'returning_contributor'
-        else 'newcomer'
+        when p.author_key is null then 'unknown'
+        when a.author_pr_seq = 1 then 'newcomer'
+        else 'returning_contributor'
     end)::varchar as contributor_type,
     p.created_at::timestamptz as created_at,
     p.created_at::date as created_date,
@@ -71,6 +88,14 @@ select
         as hours_to_first_response,
     (date_diff('second', p.created_at, r.first_review_at) / 3600.0)::double
         as hours_to_first_review,
-    (date_diff('second', p.created_at, p.merged_at) / 3600.0)::double as hours_to_merge
+    -- GitHub occasionally reports a PR merged or closed before it was opened (e.g. an
+    -- Airflow backport opened after its commit was already on the base branch). Keep
+    -- the source timestamps, flag the row, and leave the duration null.
+    (p.merged_at < p.created_at or p.closed_at < p.created_at)::boolean
+        as has_source_timestamp_anomaly,
+    (case when p.merged_at >= p.created_at
+        then date_diff('second', p.created_at, p.merged_at) / 3600.0
+    end)::double as hours_to_merge
 from prs as p
 left join responses as r using (pr_id)
+left join author_sequence as a using (pr_id)

@@ -44,7 +44,7 @@ def render(warehouse: Path = WAREHOUSE) -> str:
             """
             select repo, prs_opened, merge_rate, median_hours_to_first_response,
                    share_unanswered_7d, median_hours_to_merge, merger_bus_factor,
-                   downloads_last_30d
+                   downloads_last_30d, merges_tracked_on_github
             from marts.mart_repo_scorecard order by median_hours_to_first_response
             """
         ).fetchall()
@@ -81,11 +81,20 @@ def render(warehouse: Path = WAREHOUSE) -> str:
         "| Median time to merge | Merger bus factor | PyPI downloads, 30 d |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    for repo, prs, mr, fr, un, tm, bf, dl in rows:
+    untracked = False
+    for repo, prs, mr, fr, un, tm, bf, dl, tracked in rows:
+        mark = "" if tracked else " †"
+        untracked = untracked or not tracked
         lines.append(
-            f"| {repo} | {_int(prs)} | {_pct(mr)} | {_hours(fr)} | {_pct(un)} | {_hours(tm)} "
-            f"| {_int(bf)} | {_int(dl)} |"
+            f"| {repo}{mark} | {_int(prs)} | {_pct(mr)} | {_hours(fr)} | {_pct(un)} "
+            f"| {_hours(tm)} | {_int(bf)} | {_int(dl)} |"
         )
+    if untracked:
+        lines += [
+            "",
+            "† Merges happen outside GitHub's merge button (GitHub records accepted PRs as "
+            "closed), so merge metrics are not measurable from GitHub.",
+        ]
     n_fr, m_fr, n_mr, m_mr = newcomer
     lines += [
         "",

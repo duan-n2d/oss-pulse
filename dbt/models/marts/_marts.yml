@@ -68,11 +68,15 @@ models:
               arguments: {to: ref('dim_contributor'), field: contributor_key}
       - {name: author_is_bot, data_type: boolean}
       - {name: author_association, data_type: varchar, description: "As reported by the API at ingest time."}
+      - {name: author_pr_seq, data_type: bigint, description: "Nth PR by this author in this repo within the landed data."}
       - name: contributor_type
         data_type: varchar
+        description: >
+          maintainer (OWNER/MEMBER/COLLABORATOR), newcomer (author's first PR in this
+          repo in the landed data), returning_contributor, or unknown (deleted account).
         data_tests:
           - accepted_values:
-              arguments: {values: [maintainer, returning_contributor, newcomer]}
+              arguments: {values: [maintainer, returning_contributor, newcomer, unknown]}
       - {name: created_at, data_type: timestamp with time zone, constraints: [{type: not_null}]}
       - name: created_date
         data_type: date
@@ -104,7 +108,10 @@ models:
       - {name: distinct_responders, data_type: bigint}
       - {name: hours_to_first_response, data_type: double}
       - {name: hours_to_first_review, data_type: double}
-      - {name: hours_to_merge, data_type: double}
+      - name: has_source_timestamp_anomaly
+        data_type: boolean
+        description: "Source reports merged/closed before created; durations left null."
+      - {name: hours_to_merge, data_type: double, description: "Null when the source timestamps are inconsistent."}
 
   - name: fct_repo_activity_daily
     description: Grain repo x day. GH Archive columns are null on days with no hours loaded.
@@ -150,7 +157,12 @@ models:
       - {name: prs_merged, data_type: bigint}
       - {name: prs_closed_unmerged, data_type: bigint}
       - {name: prs_still_open, data_type: bigint}
-      - {name: merge_rate, data_type: double, description: "merged / (merged + closed unmerged)"}
+      - name: merges_tracked_on_github
+        data_type: boolean
+        description: >
+          False when GitHub records under 5% of resolved PRs as merged (merges happen
+          outside GitHub, e.g. Spark's committer script); merge metrics are then null.
+      - {name: merge_rate, data_type: double, description: "merged / (merged + closed unmerged); null when merges are not tracked on GitHub."}
       - {name: distinct_authors, data_type: bigint}
       - {name: median_hours_to_first_response, data_type: double}
       - {name: p90_hours_to_first_response, data_type: double}

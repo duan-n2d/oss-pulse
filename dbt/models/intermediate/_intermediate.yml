@@ -7,6 +7,12 @@ models:
       - name: pr_id
         data_tests: [unique, not_null]
 
+  - name: int_repo_merge_tracking
+    description: Whether a repo's accepted PRs are recorded as merged by GitHub.
+    columns:
+      - name: repo
+        data_tests: [unique, not_null]
+
 unit_tests:
   - name: first_response_ignores_bots_author_and_earlier_events
     description: >
