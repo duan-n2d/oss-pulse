@@ -192,9 +192,9 @@ fields and publishes no person-level views. Details, controls and erasure:
   drop, and before the daily job has run for a while only weekly sample hours exist.
 * **The window is 365 days of PR creation**; bus factors and return rates say nothing
   about longer history.
-* **The daily Actions job and Pages deployment** are defined but are verified only
-  once they have run on GitHub; the local pipeline and the CI fixture build are
-  verified.
+* **The daily Actions job and Pages deployment** first ran on GitHub on 2026-11-23
+  (restore from the `data` branch, incremental ingest, `dbt build`, deploy). The
+  history it builds on is the local backfill seeded into the `data` branch.
 * **PyPI downloads** exclude known mirrors but still include CI and other automated
   installs; they indicate adoption trends, not user counts.
 
