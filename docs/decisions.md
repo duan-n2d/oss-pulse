@@ -114,10 +114,20 @@ Populations exclude bot-authored and draft PRs.
 
 ## Volume monitor
 
-Each observation is compared with its own previous 28 observations (at least 8
-required): anomalous when |z| > 3, or when it falls below 20% of the trailing mean and
-that mean is at least 5. The minimum mean stops sparse series, where a zero day is
-normal, from alarming on every quiet day. Today's partial day is excluded.
+Tuned on the real data in three steps:
+
+1. Previous 28 days, |z| > 3 or below 20% of the mean: 299 flags, 129 of them
+   ordinary weekends. PR and download volumes have a strong weekly cycle.
+2. Same weekday over the previous 8 weeks (at least 4 points): weekends fixed, but 458
+   flags. With so few points the standard deviation is tiny and a 4% dip in GH
+   Archive volume counted as anomalous.
+3. Same weekday, and statistically *and* practically significant: |z| > 3, at least
+   +/-50% from the mean and at least 5 units away; or a collapse below 20% of a mean
+   of at least 5. About 250 flags over a year across 27 series. GH Archive is
+   flagged on 7 August and on every sample from 16 October 2026.
+
+Today's partial day is excluded. Thresholds are Jinja variables at the top of
+`obs_volume_anomalies.sql`.
 
 ## Dashboard
 

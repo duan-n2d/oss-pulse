@@ -66,7 +66,7 @@ def locate(url: str, warehouse: Path = WAREHOUSE) -> str:
         rank = faster * answered_share
         lines.append(
             f"  waited longer than ~{rank:.0%} of {prs} PRs in the window "
-            f"({share_unanswered:.0%} of them never got a response)"
+            f"({share_unanswered:.0%} of them have no human response yet)"
         )
     if merge_hours is not None:
         lines.append(f"  merged after {fmt_hours(merge_hours)}")

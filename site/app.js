@@ -292,7 +292,7 @@ function setupLocate(quantiles) {
       out.textContent = `${repo}#${number}: first human response after ${fmtHours(hours)}. ` +
         `That is slower than about ${fmtPct(rank)} of the ${fmtInt(q.prs)} PRs opened in the window ` +
         `(repo median ${fmtHours(scorecard?.median_hours_to_first_response)}; ` +
-        `${fmtPct(q.share_unanswered)} never got a response).`;
+        `${fmtPct(q.share_unanswered)} have no human response yet).`;
     } catch (err) {
       out.textContent = err.message;
     }

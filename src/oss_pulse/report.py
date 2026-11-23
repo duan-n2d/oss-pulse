@@ -62,7 +62,10 @@ def render(warehouse: Path = WAREHOUSE) -> str:
             """
             select
               median(avg_events_per_hour) filter (where volume_date < date '2026-01-01'),
-              median(avg_events_per_hour) filter (where volume_date >= current_date - 14),
+              median(avg_events_per_hour) filter (
+                  where volume_date
+                      > (select max(volume_date) from observability.obs_gharchive_coverage) - 14
+              ),
               min(volume_date) filter (where coverage_ratio < 0.2),
               count(*)
             from observability.obs_gharchive_coverage
@@ -74,8 +77,8 @@ def render(warehouse: Path = WAREHOUSE) -> str:
 
     lines = [
         f"As of **{as_of}**: {len(rows)} repositories, **{_int(prs_window)} human-authored, "
-        f"non-draft PRs** opened in the last 365 days, {_int(humans)} pseudonymised human "
-        "contributors. Sorted by median time to first human response.",
+        f"non-draft PRs** opened in the 365 days up to that date, {_int(humans)} "
+        "pseudonymised human contributors. Sorted by median time to first human response.",
         "",
         "| Repository | PRs | Merge rate | Median first response | Unanswered after 7 d "
         "| Median time to merge | Merger bus factor | PyPI downloads, 30 d |",
@@ -106,7 +109,7 @@ def render(warehouse: Path = WAREHOUSE) -> str:
     if before and recent:
         lines.append(
             f"* GH Archive coverage: a median hour held **{_int(round(before))}** public events "
-            f"before 2026 and **{_int(round(recent))}** in the last 14 days "
+            f"before 2026 and **{_int(round(recent))}** in the 14 days to {as_of} "
             f"({recent / before:.0%}); the first sampled day below 20% of the baseline was "
             f"**{first_drop}** ({days} days sampled). Star/fork/comment counts from GH Archive "
             "are therefore shown with their coverage, not as totals."

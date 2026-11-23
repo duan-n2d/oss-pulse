@@ -3,14 +3,21 @@
 --   prs_opened         PRs opened per repo per day (GitHub API)
 --   pypi_downloads     downloads per package per day (pypistats)
 --   gharchive_volume   global GH Archive events per loaded hour, per day observed
--- An observation is anomalous when it is more than 3 standard deviations from the
--- trailing mean, or below 20% of it when the trailing mean is at least 5 (a collapse
--- that a z-score can understate when the history is noisy; sparse series, where a
--- zero day is normal, are judged on the z-score alone). Trailing = the previous 28 observations of that series,
--- needing at least 8 of them.
+-- Each observation is compared with the same weekday in the previous 8 weeks of its
+-- series (at least 4 needed): PR and download volumes have a strong weekly cycle,
+-- and a first version that used the previous 28 days flagged 129 ordinary weekends
+-- as drops. With so few points the standard deviation is small, so a z-score alone
+-- flagged hundreds of trivial moves (a 4% dip included). Anomalous therefore means:
+--   statistically AND practically significant: |z| > 3, at least +/-50% from the
+--   mean, and at least 5 units away from it; or
+--   a collapse: below 20% of a mean of at least 5.
 {% set z_threshold = 3 %}
 {% set collapse_ratio = 0.2 %}
 {% set min_mean_for_collapse = 5 %}
+{% set lookback_weeks = 8 %}
+{% set min_relative_change = 0.5 %}
+{% set min_absolute_change = 5 %}
+{% set min_history = 4 %}
 
 with series as (
     select 'prs_opened' as series, repo as entity, activity_date as obs_date,
@@ -40,8 +47,8 @@ scored as (
         count(value) over w as trailing_n
     from series
     window w as (
-        partition by series, entity order by obs_date
-        rows between 28 preceding and 1 preceding
+        partition by series, entity, isodow(obs_date) order by obs_date
+        rows between {{ lookback_weeks }} preceding and 1 preceding
     )
 )
 
@@ -55,13 +62,15 @@ select
     trailing_n::bigint as trailing_n,
     ((value - trailing_mean) / nullif(trailing_std, 0))::double as z_score,
     (value / nullif(trailing_mean, 0))::double as ratio_to_trailing,
-    (trailing_n >= 8 and (
-        abs((value - trailing_mean) / nullif(trailing_std, 0)) > {{ z_threshold }}
+    (trailing_n >= {{ min_history }} and (
+        (abs((value - trailing_mean) / nullif(trailing_std, 0)) > {{ z_threshold }}
+            and abs(value / nullif(trailing_mean, 0) - 1) >= {{ min_relative_change }}
+            and abs(value - trailing_mean) >= {{ min_absolute_change }})
         or (trailing_mean >= {{ min_mean_for_collapse }}
             and value / nullif(trailing_mean, 0) < {{ collapse_ratio }})
     ))::boolean as is_anomaly,
     (case
-        when trailing_n < 8 then null
+        when trailing_n < {{ min_history }} then null
         when value >= trailing_mean then 'spike'
         else 'drop'
     end)::varchar as direction
