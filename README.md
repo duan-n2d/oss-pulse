@@ -31,24 +31,24 @@ costs nothing to run.
 ## Results
 
 <!-- RESULTS:START -->
-As of **2026-11-28**: 14 repositories, **39,564 human-authored, non-draft PRs** opened in the 365 days up to that date, 7,426 pseudonymised human contributors. Sorted by median time to first human response.
+As of **2026-11-28**: 14 repositories, **39,578 human-authored, non-draft PRs** opened in the 365 days up to that date, 7,427 pseudonymised human contributors. Sorted by median time to first human response.
 
 | Repository | PRs | Merge rate | Median first response | Unanswered after 7 d | Median time to merge | Merger bus factor | PyPI downloads, 30 d |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | delta-io/delta-rs | 647 | 89% | 6.0 h | 13% | 16.9 h | 1 | 10,752,983 |
-| apache/spark † | 7,110 | n/a | 6.3 h | 14% | n/a | n/a | 47,941,067 |
-| apache/airflow | 12,223 | 82% | 7.3 h | 20% | 23.8 h | 5 | 5,983,776 |
+| apache/spark † | 7,121 | n/a | 6.3 h | 14% | n/a | n/a | 47,941,067 |
+| apache/airflow | 12,224 | 82% | 7.3 h | 20% | 23.8 h | 5 | 5,983,776 |
 | dbt-labs/dbt-core | 1,387 | 53% | 10.5 h | 53% | 7.4 h | 3 | 24,684,500 |
 | apache/arrow-js | 37 | 100% | 11.3 h | 33% | 2.2 d | 1 | n/a |
-| apache/flink | 2,712 | 85% | 11.5 h | 29% | 29.1 h | 3 | 231,221 |
-| duckdb/duckdb | 6,472 | 86% | 11.7 h | 38% | 21.5 h | 1 | 89,265,846 |
+| apache/flink | 2,712 | 86% | 11.5 h | 29% | 29.2 h | 3 | 231,221 |
+| duckdb/duckdb | 6,473 | 86% | 11.7 h | 38% | 21.5 h | 1 | 89,265,846 |
 | pola-rs/polars | 3,486 | 86% | 13.8 h | 45% | 15.6 h | 1 | 72,571,297 |
 | apache/iceberg-python | 834 | 73% | 14.0 h | 30% | 2.4 d | 2 | 24,748,021 |
 | dagster-io/dagster | 976 | 71% | 15.0 h | 58% | 23.8 h | 3 | 10,791,835 |
 | apache/arrow | 1,871 | 85% | 16.9 h | 28% | 2.9 d | 2 | 428,137,602 |
 | moj-analytical-services/splink | 223 | 93% | 19.9 h | 55% | 2.8 h | 1 | 1,452,002 |
 | great-expectations/great_expectations | 589 | 81% | 20.6 h | 52% | 23.5 h | 1 | 19,214,625 |
-| huggingface/datasets | 997 | 69% | 2.6 d | 73% | 29.0 h | 1 | 65,792,558 |
+| huggingface/datasets | 998 | 69% | 2.6 d | 73% | 29.0 h | 1 | 65,792,558 |
 
 † Merges happen outside GitHub's merge button (GitHub records accepted PRs as closed), so merge metrics are not measurable from GitHub.
 
