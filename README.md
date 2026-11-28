@@ -31,30 +31,30 @@ costs nothing to run.
 ## Results
 
 <!-- RESULTS:START -->
-As of **2026-11-21**: 14 repositories, **38,881 human-authored, non-draft PRs** opened in the 365 days up to that date, 7,249 pseudonymised human contributors. Sorted by median time to first human response.
+As of **2026-11-28**: 14 repositories, **39,564 human-authored, non-draft PRs** opened in the 365 days up to that date, 7,426 pseudonymised human contributors. Sorted by median time to first human response.
 
 | Repository | PRs | Merge rate | Median first response | Unanswered after 7 d | Median time to merge | Merger bus factor | PyPI downloads, 30 d |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| delta-io/delta-rs | 627 | 90% | 5.7 h | 13% | 16.7 h | 2 | 10,677,209 |
-| apache/spark † | 7,041 | n/a | 6.2 h | 14% | n/a | n/a | 48,459,221 |
-| apache/airflow | 12,167 | 82% | 7.1 h | 20% | 23.5 h | 5 | 6,446,877 |
-| apache/arrow-js | 37 | 100% | 9.9 h | 24% | 2.2 d | 1 | n/a |
-| dbt-labs/dbt-core | 1,372 | 53% | 10.0 h | 52% | 7.9 h | 3 | 25,154,323 |
-| apache/flink | 2,616 | 85% | 11.4 h | 28% | 29.2 h | 3 | 231,190 |
-| duckdb/duckdb | 6,252 | 85% | 12.1 h | 37% | 22.0 h | 1 | 82,467,672 |
-| apache/iceberg-python | 804 | 73% | 12.5 h | 31% | 2.2 d | 2 | 25,398,541 |
-| dagster-io/dagster | 989 | 72% | 13.6 h | 57% | 23.1 h | 3 | 11,075,088 |
-| pola-rs/polars | 3,400 | 86% | 13.8 h | 43% | 16.0 h | 1 | 69,260,548 |
-| apache/arrow | 1,833 | 86% | 16.9 h | 27% | 2.9 d | 2 | 437,657,223 |
-| moj-analytical-services/splink | 228 | 93% | 19.9 h | 56% | 2.8 h | 1 | 1,560,642 |
-| great-expectations/great_expectations | 586 | 81% | 20.6 h | 52% | 23.8 h | 1 | 19,434,082 |
-| huggingface/datasets | 929 | 73% | 2.8 d | 74% | 36.2 h | 1 | 66,256,672 |
+| delta-io/delta-rs | 647 | 89% | 6.0 h | 13% | 16.9 h | 1 | 10,752,983 |
+| apache/spark † | 7,110 | n/a | 6.3 h | 14% | n/a | n/a | 47,941,067 |
+| apache/airflow | 12,223 | 82% | 7.3 h | 20% | 23.8 h | 5 | 5,983,776 |
+| dbt-labs/dbt-core | 1,387 | 53% | 10.5 h | 53% | 7.4 h | 3 | 24,684,500 |
+| apache/arrow-js | 37 | 100% | 11.3 h | 33% | 2.2 d | 1 | n/a |
+| apache/flink | 2,712 | 85% | 11.5 h | 29% | 29.1 h | 3 | 231,221 |
+| duckdb/duckdb | 6,472 | 86% | 11.7 h | 38% | 21.5 h | 1 | 89,265,846 |
+| pola-rs/polars | 3,486 | 86% | 13.8 h | 45% | 15.6 h | 1 | 72,571,297 |
+| apache/iceberg-python | 834 | 73% | 14.0 h | 30% | 2.4 d | 2 | 24,748,021 |
+| dagster-io/dagster | 976 | 71% | 15.0 h | 58% | 23.8 h | 3 | 10,791,835 |
+| apache/arrow | 1,871 | 85% | 16.9 h | 28% | 2.9 d | 2 | 428,137,602 |
+| moj-analytical-services/splink | 223 | 93% | 19.9 h | 55% | 2.8 h | 1 | 1,452,002 |
+| great-expectations/great_expectations | 589 | 81% | 20.6 h | 52% | 23.5 h | 1 | 19,214,625 |
+| huggingface/datasets | 997 | 69% | 2.6 d | 73% | 29.0 h | 1 | 65,792,558 |
 
 † Merges happen outside GitHub's merge button (GitHub records accepted PRs as closed), so merge metrics are not measurable from GitHub.
 
-* Across repos (median of repo medians), newcomers wait **17.7 h** for a first response versus **6.2 h** for maintainers, and their PRs merge **58%** of the time versus **93%**.
-* GH Archive coverage: a median hour held **157,822** public events before 2026 and **4,435** in the 14 days to 2026-11-21 (3%); the first sampled day below 20% of the baseline was **2026-10-16** (54 days sampled). Star/fork/comment counts from GH Archive are therefore shown with their coverage, not as totals.
-* Volume monitor: 248 anomalous observations flagged across all series.
+* Across repos (median of repo medians), newcomers wait **18.2 h** for a first response versus **5.8 h** for maintainers, and their PRs merge **58%** of the time versus **93%**.
+* GH Archive coverage: a median hour held **157,822** public events before 2026 and **5,240** in the 14 days to 2026-11-28 (3%); the first sampled day below 20% of the baseline was **2026-10-16** (60 days sampled). Star/fork/comment counts from GH Archive are therefore shown with their coverage, not as totals.
+* Volume monitor: 249 anomalous observations flagged across all series.
 <!-- RESULTS:END -->
 
 The dashboard has the full picture, including response-time distributions, weekly
